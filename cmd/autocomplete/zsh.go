@@ -1,7 +1,6 @@
 package autocomplete
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,7 +22,6 @@ func runAutocompleteZsh(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	// Create completion script
 	completionScript := `#compdef wt worktree-manager
 
 _wt() {
@@ -96,7 +94,7 @@ _wt_commands() {
 }
 
 _wt_branches() {
-    local branches=(${(f)"$(wt tree list 2>/dev/null | grep "🔸" | grep -v "(bare)" | head -20)"})
+    local branches=(${(f)"$(wt tree list 2>/dev/null | grep "🔸" | head -20)"})
     _describe "branches" branches
 }
 
@@ -108,7 +106,6 @@ _wt_repos() {
 _wt
 `
 
-	// Write to zsh completion directory
 	zshCompletionDir := filepath.Join(homeDir, ".zsh", "completions")
 	if err := os.MkdirAll(zshCompletionDir, 0755); err != nil {
 		output.Error("Failed to create zsh completion directory: %v", err)
@@ -123,8 +120,8 @@ _wt
 
 	output.Success("Zsh completion installed to: %s", completionFile)
 	output.Hint("To enable completion, add this to your ~/.zshrc:")
-	fmt.Printf("   fpath=(~/.zsh/completions $fpath)\n")
-	fmt.Printf("   autoload -U compinit && compinit\n")
+	output.Info("   fpath=(~/.zsh/completions $fpath)")
+	output.Info("   autoload -U compinit && compinit")
 	output.Hint("Or restart your terminal to load completions automatically.")
 
 	return nil

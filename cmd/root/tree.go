@@ -12,7 +12,6 @@ var TreeCmd = &cobra.Command{
 }
 
 func init() {
-	// Add worktree-related commands under tree
 	TreeCmd.AddCommand(tree.AddCmd)
 	TreeCmd.AddCommand(tree.RemoveCmd)
 	TreeCmd.AddCommand(tree.ListCmd)

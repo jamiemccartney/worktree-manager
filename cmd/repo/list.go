@@ -1,11 +1,9 @@
 package repo
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 	"worktree-manager/internal/config"
-	"worktree-manager/internal/output"
+	"worktree-manager/internal/contextkeys"
 )
 
 var ListCmd = &cobra.Command{
@@ -16,12 +14,8 @@ var ListCmd = &cobra.Command{
 }
 
 func runRepoList(cmd *cobra.Command, args []string) error {
-	cfg, err := config.Load()
-	if err != nil {
-		output.Error("Failed to load config: %v", err)
-		os.Exit(1)
-	}
+	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
 
-	output.PrintRepoList(cfg.Repos)
+	config.PrintRepoList(cfg.Repos)
 	return nil
 }

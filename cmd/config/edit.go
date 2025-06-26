@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	configpkg "worktree-manager/internal/config"
+	"worktree-manager/internal/contextkeys"
 	"worktree-manager/internal/output"
 )
 
@@ -17,19 +18,14 @@ var EditCmd = &cobra.Command{
 }
 
 func runConfigEdit(cmd *cobra.Command, args []string) error {
-	cfg, err := configpkg.Load()
-	if err != nil {
-		output.Error("Failed to load config: %v", err)
-		os.Exit(1)
-	}
+	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*configpkg.Config)
 
 	configPath := configpkg.GetConfigPath()
 	editor := cfg.ConfigEditor
 	if editor == "" {
-		editor = "vi" // fallback
+		editor = "vi"
 	}
 
-	// Open the config file in the editor
 	editorCmd := exec.Command(editor, configPath)
 	editorCmd.Stdin = os.Stdin
 	editorCmd.Stdout = os.Stdout

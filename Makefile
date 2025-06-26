@@ -16,7 +16,10 @@ deps:
 	go mod tidy
 	go mod download
 
+lint:
+	golangci-lint run
+
 install: build
 	cp $(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
 
-.PHONY: build run test clean deps
+.PHONY: build run test lint clean deps

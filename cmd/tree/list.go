@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"worktree-manager/internal/config"
+	"worktree-manager/internal/contextkeys"
 	"worktree-manager/internal/output"
 	"worktree-manager/internal/worktree"
 )
@@ -16,7 +18,9 @@ var ListCmd = &cobra.Command{
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	if err := worktree.ListWorktrees(); err != nil {
+	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
+	
+	if err := worktree.ListWorktrees(cfg); err != nil {
 		output.Error("%v", err)
 		os.Exit(1)
 	}
@@ -24,4 +28,3 @@ func runList(cmd *cobra.Command, args []string) error {
 }
 
 
-// Command is added to tree command in tree.go

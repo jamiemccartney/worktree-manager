@@ -1,7 +1,6 @@
 package autocomplete
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,7 +22,6 @@ func runAutocompleteBash(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	// Create completion script
 	completionScript := `#!/bin/bash
 _wt_completion() {
     local cur prev words cword
@@ -33,7 +31,7 @@ _wt_completion() {
         add|remove|workon)
             # Complete with branch names from current repo worktrees
             if command -v wt >/dev/null 2>&1; then
-                local branches=($(wt tree list 2>/dev/null | grep "🔸" | grep -v "(bare)" | head -20))
+                local branches=($(wt tree list 2>/dev/null | grep "🔸" | head -20))
                 COMPREPLY=($(compgen -W "${branches[*]}" -- "$cur"))
             fi
             return
@@ -81,7 +79,6 @@ complete -F _wt_completion wt
 complete -F _wt_completion worktree-manager
 `
 
-	// Write to bash completion directory
 	bashCompletionDir := filepath.Join(homeDir, ".bash_completion.d")
 	if err := os.MkdirAll(bashCompletionDir, 0755); err != nil {
 		output.Error("Failed to create bash completion directory: %v", err)
@@ -96,7 +93,7 @@ complete -F _wt_completion worktree-manager
 
 	output.Success("Bash completion installed to: %s", completionFile)
 	output.Hint("To enable completion, add this to your ~/.bashrc:")
-	fmt.Printf("   source %s\n", completionFile)
+	output.Info("   source %s", completionFile)
 	output.Hint("Or restart your terminal to load completions automatically.")
 
 	return nil

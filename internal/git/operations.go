@@ -8,21 +8,18 @@ import (
 	"strings"
 )
 
-// FetchFromOrigin fetches the latest changes from the origin remote
 func FetchFromOrigin(repoDir string) error {
 	cmd := exec.Command("git", "fetch", "origin")
 	cmd.Dir = repoDir
 	return cmd.Run()
 }
 
-// RemoteBranchExists checks if a branch exists on the remote origin
 func RemoteBranchExists(repoDir, branch string) bool {
 	cmd := exec.Command("git", "ls-remote", "--exit-code", "--heads", "origin", branch)
 	cmd.Dir = repoDir
 	return cmd.Run() == nil
 }
 
-// GetBaseBranch determines the default base branch (origin/main or origin/master)
 func GetBaseBranch(repoDir string) (string, error) {
 	mainCmd := exec.Command("git", "ls-remote", "--exit-code", "--heads", "origin", "main")
 	mainCmd.Dir = repoDir
@@ -41,14 +38,12 @@ func GetBaseBranch(repoDir string) (string, error) {
 	return "", fmt.Errorf("neither origin/main nor origin/master exists")
 }
 
-// IsGitRepository checks if the given path is a git repository
 func IsGitRepository(path string) bool {
 	gitDir := filepath.Join(path, ".git")
 	_, err := os.Stat(gitDir)
 	return !os.IsNotExist(err)
 }
 
-// CreateWorktree creates a new worktree with the specified options
 func CreateWorktree(repoDir string, opts WorktreeCreateOptions) error {
 	args := []string{"worktree", "add"}
 
@@ -65,7 +60,6 @@ func CreateWorktree(repoDir string, opts WorktreeCreateOptions) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoDir
 
-	// Capture both stdout and stderr for better error reporting
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git command failed: %v\nOutput: %s", err, string(output))
@@ -74,14 +68,12 @@ func CreateWorktree(repoDir string, opts WorktreeCreateOptions) error {
 	return nil
 }
 
-// RemoveWorktree removes a worktree at the specified path
 func RemoveWorktree(repoDir, worktreePath string) error {
 	cmd := exec.Command("git", "worktree", "remove", "--force", worktreePath)
 	cmd.Dir = repoDir
 	return cmd.Run()
 }
 
-// ListWorktrees returns a list of all worktrees for the repository
 func ListWorktrees(repoDir string) ([]Worktree, error) {
 	cmd := exec.Command("git", "worktree", "list", "--porcelain")
 	cmd.Dir = repoDir
@@ -94,7 +86,6 @@ func ListWorktrees(repoDir string) ([]Worktree, error) {
 	return parseWorktreeList(string(output)), nil
 }
 
-// parseWorktreeList parses the output of 'git worktree list --porcelain'
 func parseWorktreeList(output string) []Worktree {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	var worktrees []Worktree
@@ -117,12 +108,8 @@ func parseWorktreeList(output string) []Worktree {
 				Path: strings.TrimPrefix(line, "worktree "),
 			}
 		} else if current != nil {
-			if strings.HasPrefix(line, "HEAD ") {
-				current.HEAD = strings.TrimPrefix(line, "HEAD ")
-			} else if strings.HasPrefix(line, "branch ") {
+			if strings.HasPrefix(line, "branch ") {
 				current.Branch = strings.TrimPrefix(line, "branch ")
-			} else if line == "bare" {
-				current.IsBare = true
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"worktree-manager/internal/config"
+	"worktree-manager/internal/contextkeys"
 	"worktree-manager/internal/output"
 )
 
@@ -18,12 +19,7 @@ var UseCmd = &cobra.Command{
 
 func runRepoUse(cmd *cobra.Command, args []string) error {
 	alias := args[0]
-
-	cfg, err := config.Load()
-	if err != nil {
-		output.Error("Failed to load config: %v", err)
-		os.Exit(1)
-	}
+	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
 
 	repo, err := cfg.FindRepoByAlias(alias)
 	if err != nil {
@@ -31,13 +27,11 @@ func runRepoUse(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	// Check if directory exists
 	if _, err := os.Stat(repo.Dir); os.IsNotExist(err) {
 		output.Error("Repository directory does not exist: %s", repo.Dir)
 		os.Exit(1)
 	}
 
-	// Set this repository as the active repository
 	if err := cfg.SetActiveRepo(alias); err != nil {
 		output.Error("Failed to set active repository: %v", err)
 		os.Exit(1)
