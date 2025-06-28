@@ -1,0 +1,21 @@
+name: "Setup CI Environment"
+
+runs:
+    using: "composite"
+    steps:
+      - name: "Get Go Version from go.mod"
+        id: "get-go-version"
+        shell: bash
+        run: |
+          version=$(grep '^go ' go.mod | cut -d' ' -f2)
+          echo "Go version: $version"
+          echo "go-version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: "Setup Go"
+        uses: WillAbides/setup-go-faster@a0ff5217a7d2567ed6ff1aa2b7d8f9d58173b2c9
+        with:
+          go-version: ${{ steps.get-go-version.outputs.go-version }}
+
+      - name: "Install Dependencies"
+        shell: bash
+        run: make deps

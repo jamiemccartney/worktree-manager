@@ -1,0 +1,54 @@
+name: ci.yml
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+jobs:
+  build:
+    name: Ensure Project Builds
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 #v4.1.6
+      - uses: ./.github/actions/setup_ci_environment
+      - name: "Run Tests"
+        run: make test
+
+  test:
+    name: Run Unit Tests
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 #v4.1.6
+      - uses: ./.github/actions/setup_ci_environment
+      - name: "Run Tests"
+        run: make test
+
+  lint:
+    name: Run linter
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 #v4.1.6
+      - uses: ./.github/actions/setup_ci_environment
+      - uses: dominikh/staticcheck-action@v1.2.0
+        with:
+          version: "2025.1"
+          install-go: false
+
+  tiny:
+    name: Run go mod tidy
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 #v4.1.6
+      - uses: ./.github/actions/setup_ci_environment
+      - name: "Run Tidy"
+        run: make tidy
+      - name: Ensure no changes
+        run: |
+          git diff --exit-code go.mod go.sum || {
+            echo "::error::go.mod or go.sum is not tidy. Please run 'go mod tidy'."
+            exit 1
+          }

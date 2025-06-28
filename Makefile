@@ -13,13 +13,18 @@ clean:
 	rm -f wt
 
 deps:
-	go mod tidy
 	go mod download
 
+tidy:
+	go mod tidy
+
 lint:
-	golangci-lint run
+	staticcheck ./...
+
+install-linter:
+	brew install staticcheck
 
 install: build
 	cp $(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
 
-.PHONY: build run test lint clean deps
+.PHONY: build run test install-linter lint clean deps tidy
