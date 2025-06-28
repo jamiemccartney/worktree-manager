@@ -33,11 +33,6 @@ func Load() (*Config, error) {
 	return cfg, nil
 }
 
-// GetConfigPath returns the path to the config file
-func GetConfigPath() string {
-	return consts.GetFilePaths().Config
-}
-
 // CheckConfigExists checks if the config file exists
 func CheckConfigExists() bool {
 	return fileops.FileExists(consts.GetFilePaths().Config)

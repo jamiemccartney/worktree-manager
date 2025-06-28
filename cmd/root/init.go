@@ -30,7 +30,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		output.Error("%v", err)
 		os.Exit(1)
 	}
-	output.Info("Config created at: %s", config.GetConfigPath())
+	output.Info("Config created at: %s", consts.GetFilePaths().Config)
 
 	// Create state
 	if err := state.CreateDefault(); err != nil {
