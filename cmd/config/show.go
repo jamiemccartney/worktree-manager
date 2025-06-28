@@ -3,10 +3,10 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"worktree-manager/internal/config"
 
 	"github.com/spf13/cobra"
-	"worktree-manager/internal/config"
-	configpkg "worktree-manager/internal/config"
+	"worktree-manager/internal/consts"
 	"worktree-manager/internal/output"
 )
 
@@ -28,6 +28,6 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 	}
 
 	output.Success("Configuration (resolved):\n%s", string(data))
-	output.Info("Config file location: %s", configpkg.GetConfigPath())
+	output.Info("Config file location: %s", consts.GetFilePaths().Config)
 	return nil
 }

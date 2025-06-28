@@ -3,10 +3,10 @@ package config
 import (
 	"os"
 	"os/exec"
+	"worktree-manager/internal/consts"
 
 	"github.com/spf13/cobra"
 	"worktree-manager/internal/config"
-	configpkg "worktree-manager/internal/config"
 	"worktree-manager/internal/output"
 )
 
@@ -20,7 +20,7 @@ var EditCmd = &cobra.Command{
 func runConfigEdit(cmd *cobra.Command, args []string) error {
 	cfg := config.GetConfigFromContext(cmd.Context())
 
-	configPath := configpkg.GetConfigPath()
+	configPath := consts.GetFilePaths().Config
 	editor := cfg.ConfigEditor
 	if editor == "" {
 		editor = "vi"
