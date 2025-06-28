@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"worktree-manager/internal/config"
-	"worktree-manager/internal/contextkeys"
 	"worktree-manager/internal/output"
+	"worktree-manager/internal/state"
 	"worktree-manager/internal/worktree"
 )
 
@@ -18,13 +18,12 @@ var ListCmd = &cobra.Command{
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
-	
-	if err := worktree.ListWorktrees(cfg); err != nil {
+	cfg := config.GetConfigFromContext(cmd.Context())
+	appState := state.GetStateFromContext(cmd.Context())
+
+	if err := worktree.ListWorktrees(cfg, appState); err != nil {
 		output.Error("%v", err)
 		os.Exit(1)
 	}
 	return nil
 }
-
-

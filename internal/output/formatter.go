@@ -36,7 +36,6 @@ func Cleanup(format string, args ...interface{}) {
 	fmt.Printf("🗑️  "+format+"\n", args...)
 }
 
-func Prompt(format string, args ...interface{}) {
+func Question(format string, args ...interface{}) {
 	fmt.Printf("❓  "+format, args...)
 }
-

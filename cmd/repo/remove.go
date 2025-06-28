@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"worktree-manager/internal/config"
-	"worktree-manager/internal/contextkeys"
+	"worktree-manager/internal/consts"
 	"worktree-manager/internal/git"
 	"worktree-manager/internal/output"
+	"worktree-manager/internal/state"
 )
 
 var RemoveCmd = &cobra.Command{
@@ -22,9 +22,9 @@ var RemoveCmd = &cobra.Command{
 
 func runRepoRemove(cmd *cobra.Command, args []string) error {
 	alias := args[0]
-	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
+	appState := state.GetStateFromContext(cmd.Context())
 
-	repo, err := cfg.FindRepoByAlias(alias)
+	repo, err := appState.FindRepoByAlias(alias)
 	if err != nil {
 		output.Error("%v", err)
 		os.Exit(1)
@@ -41,7 +41,7 @@ func runRepoRemove(cmd *cobra.Command, args []string) error {
 		output.Info("Found %d worktrees associated with this repository.", len(worktrees))
 	}
 
-	output.Prompt("Do you also want to delete the repository and its worktrees directories? [y/N]: ")
+	output.Question("Do you also want to delete the repository and its worktrees directories? [y/N]: ")
 
 	var response string
 	if _, err := fmt.Scanln(&response); err != nil {
@@ -58,7 +58,7 @@ func runRepoRemove(cmd *cobra.Command, args []string) error {
 		}
 		output.Cleanup("Deleted repository directory: %s", repo.Dir)
 
-		worktreesDir := filepath.Join(cfg.WorktreesDir, repo.Alias)
+		worktreesDir := filepath.Join(consts.GetDirectoryPaths().DefaultWorktreesDir, repo.Alias)
 		if _, err := os.Stat(worktreesDir); !os.IsNotExist(err) {
 			if err := os.RemoveAll(worktreesDir); err != nil {
 				output.Error("Failed to delete worktrees directory: %v", err)
@@ -68,8 +68,8 @@ func runRepoRemove(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if err := cfg.RemoveRepo(alias); err != nil {
-		output.Error("Failed to remove repository from config: %v", err)
+	if err := appState.RemoveRepo(alias); err != nil {
+		output.Error("Failed to remove repository from state: %v", err)
 		os.Exit(1)
 	}
 

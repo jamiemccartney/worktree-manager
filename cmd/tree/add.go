@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"worktree-manager/internal/config"
-	"worktree-manager/internal/contextkeys"
 	"worktree-manager/internal/output"
+	"worktree-manager/internal/state"
 	"worktree-manager/internal/worktree"
 )
 
@@ -20,12 +20,12 @@ var AddCmd = &cobra.Command{
 
 func runAdd(cmd *cobra.Command, args []string) error {
 	branch := args[0]
-	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
-	
-	if err := worktree.AddWorktree(cfg, branch); err != nil {
+	cfg := config.GetConfigFromContext(cmd.Context())
+	appState := state.GetStateFromContext(cmd.Context())
+
+	if err := worktree.AddWorktree(cfg, appState, branch); err != nil {
 		output.Error("%v", err)
 		os.Exit(1)
 	}
 	return nil
 }
-

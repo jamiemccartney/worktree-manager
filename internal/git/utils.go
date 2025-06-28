@@ -14,6 +14,6 @@ func ExtractRepoNameFromURL(url string) string {
 			repoName = path.Base(parts[len(parts)-1])
 		}
 	}
-	
+
 	return repoName
 }

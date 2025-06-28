@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"worktree-manager/internal/config"
-	"worktree-manager/internal/contextkeys"
+	"worktree-manager/internal/consts"
 	gitutils "worktree-manager/internal/git"
 	"worktree-manager/internal/output"
+	"worktree-manager/internal/state"
 )
 
 var CloneCmd = &cobra.Command{
@@ -38,19 +38,20 @@ func runRepoClone(cmd *cobra.Command, args []string) error {
 		output.Info("Using alias '%s' derived from repository URL", alias)
 	}
 
-	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
+	appState := state.GetStateFromContext(cmd.Context())
 
-	if _, err := cfg.FindRepoByAlias(alias); err == nil {
+	if _, err := appState.FindRepoByAlias(alias); err == nil {
 		output.Error("Repository with alias '%s' already exists", alias)
 		os.Exit(1)
 	}
 
-	if err := os.MkdirAll(cfg.GitReposDir, 0755); err != nil {
+	gitReposDir := consts.GetDirectoryPaths().DefaultGitReposDir
+	if err := os.MkdirAll(gitReposDir, 0755); err != nil {
 		output.Error("Failed to create git repos directory: %v", err)
 		os.Exit(1)
 	}
 
-	repoDir := filepath.Join(cfg.GitReposDir, alias)
+	repoDir := filepath.Join(gitReposDir, alias)
 
 	if _, err := os.Stat(repoDir); !os.IsNotExist(err) {
 		output.Error("Directory already exists: %s", repoDir)
@@ -68,13 +69,13 @@ func runRepoClone(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	repo := config.Repo{
+	repo := state.Repo{
 		Alias: alias,
 		Dir:   repoDir,
 	}
 
-	if err := cfg.AddRepo(repo); err != nil {
-		output.Error("Failed to add repository to config: %v", err)
+	if err := appState.AddRepo(repo); err != nil {
+		output.Error("Failed to add repository to state: %v", err)
 		os.Exit(1)
 	}
 

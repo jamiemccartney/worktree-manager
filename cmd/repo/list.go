@@ -2,8 +2,7 @@ package repo
 
 import (
 	"github.com/spf13/cobra"
-	"worktree-manager/internal/config"
-	"worktree-manager/internal/contextkeys"
+	"worktree-manager/internal/state"
 )
 
 var ListCmd = &cobra.Command{
@@ -14,8 +13,8 @@ var ListCmd = &cobra.Command{
 }
 
 func runRepoList(cmd *cobra.Command, args []string) error {
-	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*config.Config)
+	appState := state.GetStateFromContext(cmd.Context())
 
-	config.PrintRepoList(cfg.Repos)
+	state.PrintRepoList(appState.Repos)
 	return nil
 }

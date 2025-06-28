@@ -6,43 +6,61 @@ import (
 	"path/filepath"
 
 	"worktree-manager/internal/config"
-	"worktree-manager/internal/context"
+	"worktree-manager/internal/consts"
+	"worktree-manager/internal/executors"
+	"worktree-manager/internal/fileops"
 	"worktree-manager/internal/git"
 	"worktree-manager/internal/output"
-	"worktree-manager/internal/script"
-	"worktree-manager/internal/validation"
+	"worktree-manager/internal/state"
 )
 
-func AddWorktree(cfg *config.Config, branch string) error {
-	ctx, err := context.NewRepoContext(cfg)
+var scriptExecutor executors.ScriptExecutor
+
+func init() {
+	scriptExecutor = executors.NewBashScriptExecutor()
+}
+
+// getWorktreePath computes the path for a worktree branch for a given repo
+func getWorktreePath(repo *state.Repo, branch string) string {
+	return filepath.Join(consts.GetDirectoryPaths().DefaultWorktreesDir, repo.Alias, branch)
+}
+
+// getWorktreesDir computes the worktrees directory for a given repo
+func getWorktreesDir(repo *state.Repo) string {
+	return filepath.Join(consts.GetDirectoryPaths().DefaultWorktreesDir, repo.Alias)
+}
+
+func AddWorktree(cfg *config.Config, appState *state.State, branch string) error {
+	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
+		return fmt.Errorf("❌ %v", err)
+	}
+
+	worktreePath := getWorktreePath(activeRepo, branch)
+
+	if err := validateWorktreeDoesNotExist(worktreePath, branch); err != nil {
 		return err
 	}
 
-	worktreePath := ctx.GetWorktreePath(branch)
-
-	if err := validation.ValidateWorktreeDoesNotExist(worktreePath, branch); err != nil {
-		return err
-	}
-
-	if err := ctx.EnsureWorktreesDir(); err != nil {
+	if err := fileops.EnsureDir(getWorktreesDir(activeRepo)); err != nil {
 		return fmt.Errorf("failed to create worktrees directory: %w", err)
 	}
 
-	err = ctx.WithRepoDir(func() error {
+	err = fileops.WithDir(activeRepo.Dir, func() error {
 		output.Progress("Fetching from origin...")
-		if err := git.FetchFromOrigin(ctx.CurrentRepo.Dir); err != nil {
+
+		if err := git.FetchFromOrigin(activeRepo.Dir); err != nil {
 			return fmt.Errorf("failed to fetch from origin: %w", err)
 		}
 
 		var sourceBranch string
 		var message string
 
-		if git.RemoteBranchExists(ctx.CurrentRepo.Dir, branch) {
+		if git.RemoteBranchExists(activeRepo.Dir, branch) {
 			sourceBranch = fmt.Sprintf("origin/%s", branch)
 			message = fmt.Sprintf("Worktree tracking remote branch '%s' created at %s", branch, worktreePath)
 		} else {
-			baseBranch, err := git.GetBaseBranch(ctx.CurrentRepo.Dir)
+			baseBranch, err := git.GetBaseBranch(activeRepo.Dir)
 			if err != nil {
 				return fmt.Errorf("failed to determine base branch: %w", err)
 			}
@@ -57,7 +75,7 @@ func AddWorktree(cfg *config.Config, branch string) error {
 			CreateBranch: true,
 		}
 
-		if err := git.CreateWorktree(ctx.CurrentRepo.Dir, opts); err != nil {
+		if err := git.CreateWorktree(activeRepo.Dir, opts); err != nil {
 			return fmt.Errorf("failed to create worktree: %w", err)
 		}
 
@@ -69,15 +87,25 @@ func AddWorktree(cfg *config.Config, branch string) error {
 		return err
 	}
 
-	if ctx.CurrentRepo.PostWorktreeAddScript != "" {
-		if err := script.ExecuteScript(ctx.CurrentRepo.PostWorktreeAddScript, ctx.CurrentRepo, worktreePath); err != nil {
-			output.Warning("Post-worktree-add script failed: %v", err)
-		}
+	if err := scriptExecutor.Execute(&executors.ScriptExecutionContext{
+		ScriptPath:   fileops.GetPostWorktreeAddScriptPath(activeRepo.Alias),
+		Repo:         activeRepo,
+		WorktreePath: worktreePath,
+		WorkingDir:   consts.GetDirectoryPaths().RepoScriptsDir(activeRepo.Alias),
+		ProgressMsg:  "Executing post-worktree-add script: %s",
+	}); err != nil {
+		output.Warning("Post-worktree-add script failed: %v", err)
 	}
 
-	if ctx.Config.AutomaticWorkOnAfterAdd {
+	if cfg.AutomaticWorkOnAfterAdd {
 		output.Progress("Running work-on logic...")
-		if err := script.ExecuteWorkOnScript(ctx.Config, ctx.CurrentRepo, worktreePath); err != nil {
+		if err := scriptExecutor.Execute(&executors.ScriptExecutionContext{
+			ScriptPath:   consts.GetFilePaths().WorkOnScript,
+			Repo:         activeRepo,
+			WorktreePath: worktreePath,
+			WorkingDir:   worktreePath,
+			ProgressMsg:  "Executing work-on script: %s",
+		}); err != nil {
 			output.Warning("Work-on script failed: %v", err)
 		}
 	}
@@ -85,20 +113,20 @@ func AddWorktree(cfg *config.Config, branch string) error {
 	return nil
 }
 
-func RemoveWorktree(cfg *config.Config, branch string) error {
-	ctx, err := context.NewRepoContext(cfg)
+func RemoveWorktree(cfg *config.Config, appState *state.State, branch string) error {
+	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
+		return fmt.Errorf("❌ %v", err)
+	}
+
+	worktreePath := getWorktreePath(activeRepo, branch)
+
+	if err := validateWorktreeExists(worktreePath, branch); err != nil {
 		return err
 	}
 
-	worktreePath := ctx.GetWorktreePath(branch)
-
-	if err := validation.ValidateWorktreeExists(worktreePath, branch); err != nil {
-		return err
-	}
-
-	err = ctx.WithRepoDir(func() error {
-		if err := git.RemoveWorktree(ctx.CurrentRepo.Dir, worktreePath); err != nil {
+	err = fileops.WithDir(activeRepo.Dir, func() error {
+		if err := git.RemoveWorktree(activeRepo.Dir, worktreePath); err != nil {
 			return fmt.Errorf("failed to remove worktree: %w", err)
 		}
 		return nil
@@ -119,16 +147,16 @@ func RemoveWorktree(cfg *config.Config, branch string) error {
 	return nil
 }
 
-func ListWorktrees(cfg *config.Config) error {
-	ctx, err := context.NewRepoContext(cfg)
+func ListWorktrees(cfg *config.Config, appState *state.State) error {
+	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
-		return err
+		return fmt.Errorf("❌ %v", err)
 	}
 
 	var worktrees []git.Worktree
-	err = ctx.WithRepoDir(func() error {
+	err = fileops.WithDir(activeRepo.Dir, func() error {
 		var err error
-		worktrees, err = git.ListWorktrees(ctx.CurrentRepo.Dir)
+		worktrees, err = git.ListWorktrees(activeRepo.Dir)
 		return err
 	})
 
@@ -136,29 +164,49 @@ func ListWorktrees(cfg *config.Config) error {
 		return fmt.Errorf("failed to list worktrees: %w", err)
 	}
 
-	PrintWorktreeList(ctx.CurrentRepo.Alias, worktrees)
+	PrintWorktreeList(activeRepo.Alias, worktrees)
 	return nil
 }
 
-func WorkOnWorktree(cfg *config.Config, branch string) error {
-	ctx, err := context.NewRepoContext(cfg)
+func WorkOnWorktree(cfg *config.Config, appState *state.State, branch string) error {
+	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
-		return err
+		return fmt.Errorf("❌ %v", err)
 	}
 
-	worktreePath := ctx.GetWorktreePath(branch)
+	worktreePath := getWorktreePath(activeRepo, branch)
 
-	if err := validation.ValidateWorktreeExists(worktreePath, branch); err != nil {
+	if err := validateWorktreeExists(worktreePath, branch); err != nil {
 		return fmt.Errorf("%w\n\n💡 Use 'wt tree add %s' to create it first", err, branch)
 	}
 
 	output.Progress("Working on branch '%s'...", branch)
 	output.Info("Worktree path: %s", worktreePath)
 
-	if err := script.ExecuteWorkOnScript(ctx.Config, ctx.CurrentRepo, worktreePath); err != nil {
+	if err := scriptExecutor.Execute(&executors.ScriptExecutionContext{
+		ScriptPath:   consts.GetFilePaths().WorkOnScript,
+		Repo:         activeRepo,
+		WorktreePath: worktreePath,
+		WorkingDir:   worktreePath,
+		ProgressMsg:  "Executing work-on script: %s",
+	}); err != nil {
 		output.Warning("Work-on script failed: %v", err)
 	}
 
+	return nil
+}
+
+func validateWorktreeExists(worktreePath, branch string) error {
+	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+		return fmt.Errorf("worktree for branch '%s' does not exist at %s", branch, worktreePath)
+	}
+	return nil
+}
+
+func validateWorktreeDoesNotExist(worktreePath, branch string) error {
+	if _, err := os.Stat(worktreePath); !os.IsNotExist(err) {
+		return fmt.Errorf("worktree path '%s' already exists", worktreePath)
+	}
 	return nil
 }
 

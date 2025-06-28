@@ -5,8 +5,8 @@ import (
 	"os/exec"
 
 	"github.com/spf13/cobra"
+	"worktree-manager/internal/config"
 	configpkg "worktree-manager/internal/config"
-	"worktree-manager/internal/contextkeys"
 	"worktree-manager/internal/output"
 )
 
@@ -18,7 +18,7 @@ var EditCmd = &cobra.Command{
 }
 
 func runConfigEdit(cmd *cobra.Command, args []string) error {
-	cfg := cmd.Context().Value(contextkeys.ConfigKey).(*configpkg.Config)
+	cfg := config.GetConfigFromContext(cmd.Context())
 
 	configPath := configpkg.GetConfigPath()
 	editor := cfg.ConfigEditor

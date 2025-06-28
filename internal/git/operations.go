@@ -6,32 +6,69 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"worktree-manager/internal/executors"
 )
 
+type GitOperations struct {
+	cmdExecutor executors.CommandExecutor
+}
+
+func NewGitOperations() *GitOperations {
+	return &GitOperations{
+		cmdExecutor: executors.NewSystemCommandExecutor(),
+	}
+}
+
+var defaultGitOps = NewGitOperations()
+
 func FetchFromOrigin(repoDir string) error {
-	cmd := exec.Command("git", "fetch", "origin")
-	cmd.Dir = repoDir
-	return cmd.Run()
+	return defaultGitOps.FetchFromOrigin(repoDir)
+}
+
+func (g *GitOperations) FetchFromOrigin(repoDir string) error {
+	ctx := &executors.CommandExecutionContext{
+		Command:    "git",
+		Args:       []string{"fetch", "origin"},
+		WorkingDir: repoDir,
+	}
+	return g.cmdExecutor.Execute(ctx)
 }
 
 func RemoteBranchExists(repoDir, branch string) bool {
-	cmd := exec.Command("git", "ls-remote", "--exit-code", "--heads", "origin", branch)
-	cmd.Dir = repoDir
-	return cmd.Run() == nil
+	return defaultGitOps.RemoteBranchExists(repoDir, branch)
+}
+
+func (g *GitOperations) RemoteBranchExists(repoDir, branch string) bool {
+	ctx := &executors.CommandExecutionContext{
+		Command:    "git",
+		Args:       []string{"ls-remote", "--exit-code", "--heads", "origin", branch},
+		WorkingDir: repoDir,
+	}
+	err := g.cmdExecutor.Execute(ctx)
+	return err == nil
 }
 
 func GetBaseBranch(repoDir string) (string, error) {
-	mainCmd := exec.Command("git", "ls-remote", "--exit-code", "--heads", "origin", "main")
-	mainCmd.Dir = repoDir
+	return defaultGitOps.GetBaseBranch(repoDir)
+}
 
-	if mainCmd.Run() == nil {
+func (g *GitOperations) GetBaseBranch(repoDir string) (string, error) {
+	mainCtx := &executors.CommandExecutionContext{
+		Command:    "git",
+		Args:       []string{"ls-remote", "--exit-code", "--heads", "origin", "main"},
+		WorkingDir: repoDir,
+	}
+	if err := g.cmdExecutor.Execute(mainCtx); err == nil {
 		return "origin/main", nil
 	}
 
-	masterCmd := exec.Command("git", "ls-remote", "--exit-code", "--heads", "origin", "master")
-	masterCmd.Dir = repoDir
-
-	if masterCmd.Run() == nil {
+	masterCtx := &executors.CommandExecutionContext{
+		Command:    "git",
+		Args:       []string{"ls-remote", "--exit-code", "--heads", "origin", "master"},
+		WorkingDir: repoDir,
+	}
+	if err := g.cmdExecutor.Execute(masterCtx); err == nil {
 		return "origin/master", nil
 	}
 
@@ -45,6 +82,10 @@ func IsGitRepository(path string) bool {
 }
 
 func CreateWorktree(repoDir string, opts WorktreeCreateOptions) error {
+	return defaultGitOps.CreateWorktree(repoDir, opts)
+}
+
+func (g *GitOperations) CreateWorktree(repoDir string, opts WorktreeCreateOptions) error {
 	args := []string{"worktree", "add"}
 
 	if opts.CreateBranch {
@@ -57,24 +98,33 @@ func CreateWorktree(repoDir string, opts WorktreeCreateOptions) error {
 		args = append(args, opts.SourceBranch)
 	}
 
-	cmd := exec.Command("git", args...)
-	cmd.Dir = repoDir
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("git command failed: %v\nOutput: %s", err, string(output))
+	ctx := &executors.CommandExecutionContext{
+		Command:    "git",
+		Args:       args,
+		WorkingDir: repoDir,
+		ShowOutput: true,
 	}
-
-	return nil
+	return g.cmdExecutor.Execute(ctx)
 }
 
 func RemoveWorktree(repoDir, worktreePath string) error {
-	cmd := exec.Command("git", "worktree", "remove", "--force", worktreePath)
-	cmd.Dir = repoDir
-	return cmd.Run()
+	return defaultGitOps.RemoveWorktree(repoDir, worktreePath)
+}
+
+func (g *GitOperations) RemoveWorktree(repoDir, worktreePath string) error {
+	ctx := &executors.CommandExecutionContext{
+		Command:    "git",
+		Args:       []string{"worktree", "remove", "--force", worktreePath},
+		WorkingDir: repoDir,
+	}
+	return g.cmdExecutor.Execute(ctx)
 }
 
 func ListWorktrees(repoDir string) ([]Worktree, error) {
+	return defaultGitOps.ListWorktrees(repoDir)
+}
+
+func (g *GitOperations) ListWorktrees(repoDir string) ([]Worktree, error) {
 	cmd := exec.Command("git", "worktree", "list", "--porcelain")
 	cmd.Dir = repoDir
 
