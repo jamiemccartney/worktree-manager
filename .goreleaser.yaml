@@ -13,6 +13,9 @@ builds:
     goos:
       - linux
       - darwin
+    goarch:
+      - amd64
+      - arm64
     ldflags:
       - -s -w -X worktree-manager/cmd/root.version={{.Version}} -X worktree-manager/cmd/root.commit={{.Commit}} -X worktree-manager/cmd/root.date={{.Date}}
 

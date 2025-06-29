@@ -10,10 +10,12 @@ on:
       - '**/*.go'
 
 jobs:
-  build:
+  release:
     name: Release new version
     runs-on: ubuntu-22.04
-
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,5 +107,5 @@ jobs:
       - name: Run GoReleaser
         if: steps.bump.outputs.skip != 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goreleaser release --clean
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: goreleaser release
