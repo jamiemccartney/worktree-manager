@@ -1,6 +1,7 @@
 package worktree
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -165,6 +166,40 @@ func ListWorktrees(cfg *config.Config, appState *state.State) error {
 	}
 
 	PrintWorktreeList(activeRepo.Alias, worktrees)
+	return nil
+}
+
+func ListWorktreesJSON(cfg *config.Config, appState *state.State) error {
+	activeRepo, err := appState.GetActiveRepo()
+	if err != nil {
+		return fmt.Errorf("❌ %v", err)
+	}
+
+	var worktrees []git.Worktree
+	err = fileops.WithDir(activeRepo.Dir, func() error {
+		var err error
+		worktrees, err = git.ListWorktrees(activeRepo.Dir)
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to list worktrees: %w", err)
+	}
+
+	// Extract just the branch names for autocompletion
+	var branches []string
+	for _, wt := range worktrees {
+		if wt.Branch != "" {
+			branches = append(branches, wt.Branch)
+		}
+	}
+
+	jsonOutput, err := json.Marshal(branches)
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	fmt.Println(string(jsonOutput))
 	return nil
 }
 
