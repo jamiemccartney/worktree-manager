@@ -257,3 +257,5 @@ modules.xml
 .claude
 wt
 worktree-manager
+# Added by goreleaser init:
+dist/

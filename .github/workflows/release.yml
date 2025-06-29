@@ -1,0 +1,109 @@
+name: Tag And Release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '**/*.go'
+
+jobs:
+  build:
+    name: Release new version
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup_ci_environment
+
+      - name: Get PR info for commit
+        id: pr
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const sha = process.env.GITHUB_SHA;
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha,
+            });
+
+            if (prs.length === 0) {
+              core.setFailed("❌ No PR found associated with this commit. Aborting release.");
+              return;
+            }
+
+            const pr = prs[0];
+            const labels = pr.labels.map(label => label.name);
+            core.setOutput("labels", labels.join(','));
+            core.info(`Found PR #${pr.number} with labels: ${labels.join(', ')}`);
+
+      - name: Check for release label and bump version
+        id: bump
+        run: |
+          set -e
+          LABELS="${{ steps.pr.outputs.labels }}"
+          
+          echo "Checking labels: $LABELS"
+
+          if echo "$LABELS" | grep -q "Release: skip"; then
+            echo "✅ Release skipped by label."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BUMP=""
+          if echo "$LABELS" | grep -q "Release: major"; then
+            BUMP="major"
+          elif echo "$LABELS" | grep -q "Release: minor"; then
+            BUMP="minor"
+          elif echo "$LABELS" | grep -q "Release: patch"; then
+            BUMP="patch"
+          else
+            echo "❌ No valid release label found (Release: major|minor|patch)."
+            exit 1
+          fi
+
+          echo "Detected bump type: $BUMP"
+
+          LATEST_TAG=$(git tag --sort=-v:refname | head -n 1 || true)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "❌ No existing tag found. Cannot bump version."
+            exit 1
+          fi
+
+          VERSION=${LATEST_TAG#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          case $BUMP in
+            major)
+              MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0;;
+            minor)
+              MINOR=$((MINOR + 1)); PATCH=0;;
+            patch)
+              PATCH=$((PATCH + 1));;
+          esac
+
+          NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_TAG"
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "$NEW_TAG"
+          git push origin "$NEW_TAG"
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Run GoReleaser
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goreleaser release --clean

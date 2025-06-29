@@ -18,7 +18,7 @@ var rootCmd = &cobra.Command{
 	Long:    `A command-line tool for managing Git worktrees efficiently.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 
-		if cmd.Name() == "init" || cmd.Name() == "doctor" {
+		if cmd.Name() == "init" || cmd.Name() == "doctor" || cmd.Name() == "version" {
 			return nil
 		}
 
@@ -58,4 +58,5 @@ func init() {
 	rootCmd.AddCommand(root.ConfigCmd)
 	rootCmd.AddCommand(root.RepoCmd)
 	rootCmd.AddCommand(root.AutocompleteCmd)
+	rootCmd.AddCommand(root.VersionCmd)
 }
