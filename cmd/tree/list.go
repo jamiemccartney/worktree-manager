@@ -17,13 +17,27 @@ var ListCmd = &cobra.Command{
 	RunE:  runList,
 }
 
+func init() {
+	ListCmd.Flags().Bool("json", false, "Output in JSON format for autocompletion")
+}
+
 func runList(cmd *cobra.Command, args []string) error {
 	cfg := config.GetConfigFromContext(cmd.Context())
 	appState := state.GetStateFromContext(cmd.Context())
 
-	if err := worktree.ListWorktrees(cfg, appState); err != nil {
-		output.Error("%v", err)
-		os.Exit(1)
+	// Check if JSON format is requested
+	jsonFormat, _ := cmd.Flags().GetBool("json")
+	
+	if jsonFormat {
+		if err := worktree.ListWorktreesJSON(cfg, appState); err != nil {
+			output.Error("%v", err)
+			os.Exit(1)
+		}
+	} else {
+		if err := worktree.ListWorktrees(cfg, appState); err != nil {
+			output.Error("%v", err)
+			os.Exit(1)
+		}
 	}
 	return nil
 }

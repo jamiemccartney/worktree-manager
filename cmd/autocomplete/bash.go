@@ -28,11 +28,19 @@ _wt_completion() {
     _init_completion || return
 
     case $prev in
-        add|remove|workon)
+        add|workon)
             # Complete with branch names from current repo worktrees
             if command -v wt >/dev/null 2>&1; then
                 local branches=($(wt tree list 2>/dev/null | grep "🔸" | head -20))
                 COMPREPLY=($(compgen -W "${branches[*]}" -- "$cur"))
+            fi
+            return
+            ;;
+        remove)
+            # Complete with available worktrees that can be removed
+            if command -v wt >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+                local worktrees=($(wt tree list --json 2>/dev/null | jq -r '.[]' 2>/dev/null))
+                COMPREPLY=($(compgen -W "${worktrees[*]}" -- "$cur"))
             fi
             return
             ;;

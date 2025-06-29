@@ -59,8 +59,11 @@ _wt() {
                     ;;
                 tree)
                     case $words[2] in
-                        add|remove|workon)
+                        add|workon)
                             _wt_branches
+                            ;;
+                        remove)
+                            _wt_worktrees
                             ;;
                         *)
                             _values "tree commands" \
@@ -101,6 +104,14 @@ _wt_branches() {
 _wt_repos() {
     local repos=(${(f)"$(wt repo list 2>/dev/null | grep "🔸" | cut -d' ' -f2)"})
     _describe "repositories" repos
+}
+
+_wt_worktrees() {
+    local worktrees_json="$(wt tree list --json 2>/dev/null)"
+    if [[ -n "$worktrees_json" ]]; then
+        local worktrees=(${(f)"$(echo $worktrees_json | jq -r '.[]' 2>/dev/null)"})
+        _describe "worktrees" worktrees
+    fi
 }
 
 _wt
