@@ -27,7 +27,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	// Check if JSON format is requested
 	jsonFormat, _ := cmd.Flags().GetBool("json")
-	
+
 	if jsonFormat {
 		if err := worktree.ListWorktreesJSON(cfg, appState); err != nil {
 			output.Error("%v", err)

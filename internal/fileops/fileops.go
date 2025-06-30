@@ -69,7 +69,6 @@ func GetRepoScriptDir(repoAlias string) string {
 	return filepath.Join(consts.GetDirectoryPaths().ScriptsDir, repoAlias)
 }
 
-
 // CreateExecutableScript creates a script file and makes it executable
 func CreateExecutableScript(scriptPath, content string) error {
 	if err := EnsureDir(filepath.Dir(scriptPath)); err != nil {
