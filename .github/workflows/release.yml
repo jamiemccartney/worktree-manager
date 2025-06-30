@@ -109,7 +109,7 @@ jobs:
         if: steps.bump.outputs.skip != 'true'
         uses: goreleaser/goreleaser-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           distribution: goreleaser
           version: '2.10.2'

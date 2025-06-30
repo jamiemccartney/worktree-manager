@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -130,10 +131,10 @@ func TestWithDir_InvalidDirectory(t *testing.T) {
 	// Verify error message contains expected information
 	expectedMsg := "failed to change to directory"
 	if err != nil && len(err.Error()) > 0 {
-		if !contains(err.Error(), expectedMsg) {
+		if !strings.Contains(err.Error(), expectedMsg) {
 			t.Errorf("Error message should contain '%s', got: %s", expectedMsg, err.Error())
 		}
-		if !contains(err.Error(), invalidDir) {
+		if !strings.Contains(err.Error(), invalidDir) {
 			t.Errorf("Error message should contain directory '%s', got: %s", invalidDir, err.Error())
 		}
 	}
@@ -314,16 +315,3 @@ func TestWithDir_RelativePath(t *testing.T) {
 	}
 }
 
-// Helper function to check if a string contains a substring
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) &&
-		(len(substr) == 0 ||
-			func() bool {
-				for i := 0; i <= len(s)-len(substr); i++ {
-					if s[i:i+len(substr)] == substr {
-						return true
-					}
-				}
-				return false
-			}())
-}
