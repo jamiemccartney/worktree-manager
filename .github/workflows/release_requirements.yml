@@ -24,7 +24,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_REPOSITORY: ${{ github.repository }}
         run: |
-          echo "Checking PR #$PR_NUMBER in $REPO..."
+          echo "Checking PR #$PR_NUMBER"
 
           labels=$(gh pr view "$PR_NUMBER" --json labels -q '.labels[].name')
   
@@ -32,8 +32,14 @@ jobs:
           echo "$labels"
           
           release_labels=$(echo "$labels" | grep -E '^Release: (major|minor|patch)' || true)
-          num_release_labels=$(echo "$release_labels" | grep -c .)
           
+          if [[ -z "$release_labels" ]]; then
+            num_release_labels=0
+          else
+            num_release_labels=$(echo "$release_labels" | grep -c .)
+          fi
+
+
           echo "Number of valid release labels: $num_release_labels"
 
           if [[ "$num_release_labels" -eq 0 ]]; then
