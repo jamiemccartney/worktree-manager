@@ -14,7 +14,7 @@ jobs:
   require-release-labels:
     runs-on: ubuntu-22.04
     permissions:
-      pull-requests: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 #v4.1.6
       - name: Release Labels
@@ -27,12 +27,14 @@ jobs:
           echo "Checking PR #$PR_NUMBER in $REPO..."
 
           labels=$(gh pr view "$PR_NUMBER" --json labels -q '.labels[].name')
-
+  
           echo "Labels on PR:"
           echo "$labels"
-
+          
           release_labels=$(echo "$labels" | grep -E '^Release: (major|minor|patch)' || true)
-          num_release_labels=$(echo "$release_labels" | wc -l)
+          num_release_labels=$(echo "$release_labels" | grep -c .)
+          
+          echo "Number of valid release labels: $num_release_labels"
 
           if [[ "$num_release_labels" -eq 0 ]]; then
             echo "❌ No Release: label found. Please add one of: Release: major, Release: minor, or Release: patch."
