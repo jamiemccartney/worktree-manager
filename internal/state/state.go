@@ -182,7 +182,7 @@ func (s *State) GetActiveRepo() (*Repo, error) {
 }
 
 func (s *State) createRepoScript(repoAlias string) error {
-	scriptPath := fileops.GetPostWorktreeAddScriptPath(repoAlias)
+	scriptPath := consts.GetFilePaths().PostWorktreeAddScript(repoAlias)
 	content := consts.GetPostWorktreeAddScriptContent(repoAlias)
 
 	return fileops.CreateExecutableScript(scriptPath, content)

@@ -69,10 +69,6 @@ func GetRepoScriptDir(repoAlias string) string {
 	return filepath.Join(consts.GetDirectoryPaths().ScriptsDir, repoAlias)
 }
 
-// GetPostWorktreeAddScriptPath returns the path to the post-worktree-add script for a repo
-func GetPostWorktreeAddScriptPath(repoAlias string) string {
-	return consts.GetFilePaths().PostWorktreeAdd(repoAlias)
-}
 
 // CreateExecutableScript creates a script file and makes it executable
 func CreateExecutableScript(scriptPath, content string) error {
