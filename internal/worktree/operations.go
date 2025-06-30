@@ -114,7 +114,7 @@ func AddWorktree(cfg *config.Config, appState *state.State, branch string) error
 	return nil
 }
 
-func RemoveWorktree(cfg *config.Config, appState *state.State, branch string) error {
+func RemoveWorktree(appState *state.State, branch string) error {
 	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
 		return fmt.Errorf("❌ %v", err)
@@ -148,7 +148,7 @@ func RemoveWorktree(cfg *config.Config, appState *state.State, branch string) er
 	return nil
 }
 
-func ListWorktrees(cfg *config.Config, appState *state.State) error {
+func ListWorktrees(appState *state.State) error {
 	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
 		return fmt.Errorf("❌ %v", err)
@@ -169,7 +169,7 @@ func ListWorktrees(cfg *config.Config, appState *state.State) error {
 	return nil
 }
 
-func ListWorktreesJSON(cfg *config.Config, appState *state.State) error {
+func ListWorktreesJSON(appState *state.State) error {
 	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
 		return fmt.Errorf("❌ %v", err)
@@ -203,7 +203,7 @@ func ListWorktreesJSON(cfg *config.Config, appState *state.State) error {
 	return nil
 }
 
-func WorkOnWorktree(cfg *config.Config, appState *state.State, branch string) error {
+func WorkOnWorktree(appState *state.State, branch string) error {
 	activeRepo, err := appState.GetActiveRepo()
 	if err != nil {
 		return fmt.Errorf("❌ %v", err)

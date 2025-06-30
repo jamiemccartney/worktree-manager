@@ -7,6 +7,7 @@ on:
     paths:
       - 'go.mod'
       - 'go.sum'
+      - 'main.go'
       - '**/*.go'
 
 jobs:
@@ -106,6 +107,10 @@ jobs:
 
       - name: Run GoReleaser
         if: steps.bump.outputs.skip != 'true'
+        uses: goreleaser/goreleaser-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        run: goreleaser release
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          distribution: goreleaser
+          version: '2.10.2'
+          args: release
