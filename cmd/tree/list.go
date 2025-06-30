@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"worktree-manager/internal/config"
 	"worktree-manager/internal/output"
 	"worktree-manager/internal/state"
 	"worktree-manager/internal/worktree"
@@ -22,19 +21,18 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	cfg := config.GetConfigFromContext(cmd.Context())
 	appState := state.GetStateFromContext(cmd.Context())
 
 	// Check if JSON format is requested
 	jsonFormat, _ := cmd.Flags().GetBool("json")
 
 	if jsonFormat {
-		if err := worktree.ListWorktreesJSON(cfg, appState); err != nil {
+		if err := worktree.ListWorktreesJSON(appState); err != nil {
 			output.Error("%v", err)
 			os.Exit(1)
 		}
 	} else {
-		if err := worktree.ListWorktrees(cfg, appState); err != nil {
+		if err := worktree.ListWorktrees(appState); err != nil {
 			output.Error("%v", err)
 			os.Exit(1)
 		}

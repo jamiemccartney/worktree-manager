@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"worktree-manager/internal/config"
 	"worktree-manager/internal/output"
 	"worktree-manager/internal/state"
 	"worktree-manager/internal/worktree"
@@ -20,10 +19,9 @@ var WorkonCmd = &cobra.Command{
 
 func runWorkon(cmd *cobra.Command, args []string) error {
 	branch := args[0]
-	cfg := config.GetConfigFromContext(cmd.Context())
 	appState := state.GetStateFromContext(cmd.Context())
 
-	if err := worktree.WorkOnWorktree(cfg, appState, branch); err != nil {
+	if err := worktree.WorkOnWorktree(appState, branch); err != nil {
 		output.Error("%v", err)
 		os.Exit(1)
 	}
