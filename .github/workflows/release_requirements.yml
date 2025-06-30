@@ -1,0 +1,50 @@
+name: "Require Release Label"
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+    branches:
+      - master
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '**/*.go'
+
+jobs:
+  require-release-labels:
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check for a Release Label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAGIC_COMMENT_HINT: "<!-- release-requirements:require-release-labels:comment -->"
+          GITHUB_USER: github-actions
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "Checking PR #$PR_NUMBER in $REPO..."
+
+          labels=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
+
+          echo "Labels on PR:"
+          echo "$labels"
+
+          release_labels=$(echo "$labels" | grep -E '^Release: (major|minor|patch)' || true)
+          num_release_labels=$(echo "$release_labels" | wc -l)
+
+          if [[ "$num_release_labels" -eq 0 ]]; then
+            echo "❌ No Release: label found. Please add one of: Release: major, Release: minor, or Release: patch."
+            ./.github/scripts/comments.sh --write-comment="$(cat ./.github/comment_templates/release_requirements--no-label.md)"
+            exit 1
+          elif [[ "$num_release_labels" -gt 1 ]]; then
+            echo "❌ Multiple Release: labels found. Please ensure only one of: Release: major, minor, or patch."
+            ./.github/scripts/comments.sh --write-comment="$(cat ./.github/comment_templates/release_requirements--multiple-labels.md)"
+            exit 1
+          else
+            echo "PR is valid, cleaning up comment"
+            ./.github/scripts/pr_comments.sh --cleanup-comment
+          fi
+
+          echo "✅ Valid release label detected: $release_labels"

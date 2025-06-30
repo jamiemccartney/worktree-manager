@@ -89,7 +89,7 @@ func AddWorktree(cfg *config.Config, appState *state.State, branch string) error
 	}
 
 	if err := scriptExecutor.Execute(&executors.ScriptExecutionContext{
-		ScriptPath:   fileops.GetPostWorktreeAddScriptPath(activeRepo.Alias),
+		ScriptPath:   consts.GetFilePaths().PostWorktreeAddScript(activeRepo.Alias),
 		Repo:         activeRepo,
 		WorktreePath: worktreePath,
 		WorkingDir:   consts.GetDirectoryPaths().RepoScriptsDir(activeRepo.Alias),

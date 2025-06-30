@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"worktree-manager/internal/config"
 	"worktree-manager/internal/consts"
-	"worktree-manager/internal/fileops"
 	"worktree-manager/internal/output"
 	"worktree-manager/internal/state"
 )
@@ -150,7 +149,7 @@ func checkRepos(appState *state.State) {
 			}
 		}
 
-		scriptPath := fileops.GetPostWorktreeAddScriptPath(repo.Alias)
+		scriptPath := consts.GetFilePaths().PostWorktreeAddScript(repo.Alias)
 		if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 			output.Warning("  Post-worktree-add script does not exist: %s", scriptPath)
 			output.Hint("     It will be created when you first add a worktree")
@@ -216,7 +215,7 @@ func validateRepositoryConfig(repo *state.Repo) error {
 	}
 
 	// Validate post-worktree-add script exists
-	scriptPath := fileops.GetPostWorktreeAddScriptPath(repo.Alias)
+	scriptPath := consts.GetFilePaths().PostWorktreeAddScript(repo.Alias)
 	if err := validateScriptPath(scriptPath, repo.Dir); err != nil {
 		return fmt.Errorf("invalid post-worktree-add script: %w", err)
 	}
