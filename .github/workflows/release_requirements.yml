@@ -10,6 +10,10 @@ on:
       - 'go.sum'
       - '**/*.go'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   require-release-labels:
     runs-on: ubuntu-22.04
