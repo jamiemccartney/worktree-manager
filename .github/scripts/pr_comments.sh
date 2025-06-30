@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -z "${GITHUB_USER:-}" ]]; then
-    echo "GITHUB_USER env variable is not set"
-    exit 1
-fi
-
 if [[ -z "${GH_TOKEN:-}" ]]; then
     echo "GH_TOKEN env variable is not set"
     exit 1
 fi
 
-if [[ -z "${GITHUB_REPOSITORY:-}" ]]; then
-    echo "GITHUB_REPOSITORY env variable is not set"
+if [[ -z "${GH_REPOSITORY:-}" ]]; then
+    echo "GH_REPOSITORY env variable is not set"
     exit 1
 fi
 
@@ -33,7 +28,7 @@ cleanup_comment() {
         write_comment "Comment cleaned up :heavy_check_mark:"
         sleep 10
         echo "Deleting comment with id ${magic_comment_id}..." >&2
-        gh api --method DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${magic_comment_id}"
+        gh api --method DELETE "repos/${GH_REPOSITORY}/issues/comments/${magic_comment_id}"
     fi
 }
 
@@ -44,16 +39,16 @@ write_comment() {
 
     if [[ -z "$magic_comment_id" ]]; then
         echo "Creating new comment..." >&2
-        gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -f body="$body"
+        gh api --method POST "repos/${GH_REPOSITORY}/issues/${PR_NUMBER}/comments" -f body="$body"
     else
         echo "Updating existing comment with id ${magic_comment_id}..." >&2
-        gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${magic_comment_id}" -f body="$body"
+        gh api --method PATCH "repos/${GH_REPOSITORY}/issues/comments/${magic_comment_id}" -f body="$body"
     fi
 }
 
 get_magic_comment_id() {
     echo "Checking for a comment with magic hint ${MAGIC_COMMENT_HINT}..." >&2
-    gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
+    gh api "repos/${GH_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
         --jq ".[] | select(.body | startswith(\"${MAGIC_COMMENT_HINT}\")) | .id" | head -n 1 || true
 }
 

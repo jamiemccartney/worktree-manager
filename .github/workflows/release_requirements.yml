@@ -1,4 +1,4 @@
-name: "Require Release Label"
+name: "Release Requirements"
 
 on:
   pull_request:
@@ -16,17 +16,17 @@ jobs:
     permissions:
       pull-requests: read
     steps:
-      - name: Check for a Release Label
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 #v4.1.6
+      - name: Release Labels
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAGIC_COMMENT_HINT: "<!-- release-requirements:require-release-labels:comment -->"
-          GITHUB_USER: github-actions
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_REPOSITORY: ${{ github.repository }}
         run: |
           echo "Checking PR #$PR_NUMBER in $REPO..."
 
-          labels=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
+          labels=$(gh pr view "$PR_NUMBER" --json labels -q '.labels[].name')
 
           echo "Labels on PR:"
           echo "$labels"
