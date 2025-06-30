@@ -44,11 +44,11 @@ jobs:
 
           if [[ "$num_release_labels" -eq 0 ]]; then
             echo "❌ No Release: label found. Please add one of: Release: major, Release: minor, or Release: patch."
-            ./.github/scripts/comments.sh --write-comment="$(cat ./.github/comment_templates/release_requirements--no-label.md)"
+            ./.github/scripts/pr_comments.sh --write-comment="$(cat ./.github/comment_templates/release_requirements--no-label.md)"
             exit 1
           elif [[ "$num_release_labels" -gt 1 ]]; then
             echo "❌ Multiple Release: labels found. Please ensure only one of: Release: major, minor, or patch."
-            ./.github/scripts/comments.sh --write-comment="$(cat ./.github/comment_templates/release_requirements--multiple-labels.md)"
+            ./.github/scripts/pr_comments.sh --write-comment="$(cat ./.github/comment_templates/release_requirements--multiple-labels.md)"
             exit 1
           else
             echo "PR is valid, cleaning up comment"
